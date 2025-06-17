@@ -22,7 +22,7 @@ def check_bound(rct: pg.Rect):
     return yoko, tate
 
 def game_over_screen(screen: pg.Surface):
-    black_out = pg.Surface((1100, 650))
+    black_out = pg.Surface((WIDTH, HEIGHT))
     black_out.set_alpha(200)
     black_out.fill((0, 0, 0))
     screen.blit(black_out, (0, 0))
@@ -33,7 +33,7 @@ def game_over_screen(screen: pg.Surface):
 
     font = pg.font.Font(None, 80)
     text_surf = font.render("Game Over", True, (255, 255, 255))
-    text_rect = text_surf.get_rect(center=(550, 325))
+    text_rect = text_surf.get_rect(center=(WIDTH//2, HEIGHT//2))
     screen.blit(text_surf, text_rect)
 
     pg.display.update()
@@ -49,13 +49,31 @@ def bomb():
         bb_imgs.append(bb_img)
     return bb_accs, bb_imgs
 
+def load_kk_images():
+    kk_base_img = pg.image.load("fig/3.png")
+    kk_imgs = {
+        (5, 0): pg.transform.rotozoom(kk_base_img, -90, 1),
+        (-5, 0): pg.transform.rotozoom(kk_base_img, 90, 1),
+        (0, -5): pg.transform.rotozoom(kk_base_img, 45, 1),
+        (0, 5): pg.transform.rotozoom(kk_base_img, -180, 1),
+        (5, -5): pg.transform.rotozoom(kk_base_img, -45, 1),
+        (5, 5): pg.transform.rotozoom(kk_base_img, -135, 1),
+        (-5, -5): pg.transform.rotozoom(kk_base_img, -45, 1),
+        (-5, 5): pg.transform.rotozoom(kk_base_img, 135, 1),
+        (0, 0): pg.transform.rotozoom(kk_base_img, 0, 1),  
+    }
+    return kk_imgs
+
+def get_kk_img(mv: tuple[int, int], kk_imgs: dict) -> pg.Surface:
+    return kk_imgs.get(mv, kk_imgs[(0, 0)])
+
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bb_accs, bb_imgs = bomb()
-
-    kk_img = pg.transform.rotozoom(pg.image.load("fig/3.png"), 0, 0.9)
+    kk_imgs = load_kk_images()
+    kk_img = kk_imgs[(5, 0)]  # 初期画像
     kk_rct = kk_img.get_rect(center=(300, 200))
 
     vx, vy = +5, +5
@@ -63,35 +81,39 @@ def main():
 
     clock = pg.time.Clock()
     tmr = 0
+    last_mv = (5, 0)  # 最初は右向き
 
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return
 
-        
-        avx = vx * bb_accs[ min(tmr // 500, 9)]
-        avy = vy * bb_accs[ min(tmr // 500, 9)]
-        bb_img = bb_imgs[ min(tmr // 500, 9)]
+        # 爆弾の加速度と画像
+        stage = min(tmr // 500, 9)
+        avx = vx * bb_accs[stage]
+        avy = vy * bb_accs[stage]
+        bb_img = bb_imgs[stage]
 
+        # 爆弾の移動と跳ね返り
         old_center = bb_rct.center
         bb_rct = bb_img.get_rect()
         bb_rct.center = old_center
         bb_rct.move_ip(avx, avy)
-
         yoko, tate = check_bound(bb_rct)
         if not yoko:
             vx *= -1
         if not tate:
             vy *= -1
 
+        # 衝突判定
         if kk_rct.colliderect(bb_rct):
             game_over_screen(screen)
             return
 
-        # 描画
+        # 背景描画
         screen.blit(bg_img, [0, 0])
 
+        # こうかとんの操作
         key_lst = pg.key.get_pressed()
         sum_mv = [0, 0]
         for key, mv in DELTA.items():
@@ -99,10 +121,16 @@ def main():
                 sum_mv[0] += mv[0]
                 sum_mv[1] += mv[1]
 
+        if sum_mv != [0, 0]:
+            last_mv = tuple(sum_mv)
+
+        kk_img = get_kk_img(last_mv, kk_imgs)
         kk_rct.move_ip(sum_mv)
         if check_bound(kk_rct) != (True, True):
             kk_rct.move_ip(-sum_mv[0], -sum_mv[1])
         screen.blit(kk_img, kk_rct)
+
+        # 爆弾の描画
         screen.blit(bb_img, bb_rct)
 
         pg.display.update()
