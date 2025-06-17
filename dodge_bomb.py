@@ -2,7 +2,7 @@ import os
 import random
 import sys
 import pygame as pg
-
+import time
 
 WIDTH, HEIGHT = 1100, 650
 DELTA = {  
@@ -15,7 +15,6 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 def check_bound(rct:pg.Rect):
     
-
     """
     引数：こうかとんRectかばくだんRect
     戻り値：タプル（横方向判定結果，縦方向判定結果）
@@ -27,6 +26,26 @@ def check_bound(rct:pg.Rect):
     if rct.top < 0 or HEIGHT < rct.bottom:
         tate = False
     return yoko, tate
+
+def game_over_screen(screen: pg.Surface):
+    black_out = pg.Surface((1100,650))
+    black_out.set_alpha(200)  
+    black_out.fill((0, 0, 0)) 
+    screen.blit(black_out, (0, 0))
+
+    cry_img = pg.transform.rotozoom(pg.image.load("fig/8.png"), 0, 1)
+    left_rect = cry_img.get_rect(center=(350, 325))
+    right_rect = cry_img.get_rect(center=(750, 325))
+    screen.blit(cry_img, left_rect)
+    screen.blit(cry_img, right_rect)
+
+    font = pg.font.Font(None, 80)
+    text_surf = font.render("Game Over", True, (255, 255, 255))
+    text_rect = text_surf.get_rect(center=(550, 325))
+    screen.blit(text_surf, text_rect)
+
+    pg.display.update()
+    time.sleep(5)
 
 def main():
     pg.display.set_caption("逃げろ！こうかとん")
@@ -44,10 +63,15 @@ def main():
     vx, vy = +5, +5  
     clock = pg.time.Clock()
     tmr = 0
+
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT: 
                 return
+        if kk_rct.colliderect(bb_rct):
+            print("gemeover")
+            game_over_screen(screen)
+            return
         screen.blit(bg_img, [0, 0]) 
 
         key_lst = pg.key.get_pressed()
