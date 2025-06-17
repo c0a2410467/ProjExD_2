@@ -22,6 +22,7 @@ def check_bound(rct: pg.Rect):
     return yoko, tate
 
 def game_over_screen(screen: pg.Surface):
+
     """
     ゲームオーバー画面を表示する。
 
@@ -56,7 +57,7 @@ def bomb():
 
 def load_kk_images():
     """
-    各方向に回転させた画像を辞書でかえします。
+    各方向に回転させた画像を辞書で返す。
     「fig/3.png」を読み込み、移動方向に応じて回転させた画像を作成し、
     (dx, dy) をキー、回転画像を値とする辞書を返す。
     """
@@ -78,7 +79,26 @@ def load_kk_images():
         (5, 5): pg.transform.flip(img_ld, True, False),     
 
         (0, -5): img_u,                                     
-        (0, 5): img_d,                                      
+        (0, 5): img_d,  
+    }                                    
+    img_l = pg.transform.rotozoom(kk_base_img, 90, 1)       # ← 左
+    img_lu = pg.transform.rotozoom(kk_base_img, -45, 1)     # ↖ 左上
+    img_ld = pg.transform.rotozoom(kk_base_img, 45, 1)      # ↙ 左下
+    img_u = pg.transform.rotozoom(kk_base_img, 0, 1)        # ↑ 上
+    img_d = pg.transform.rotozoom(kk_base_img, 180, 1)      # ↓ 下
+
+    kk_imgs = {
+        (-5, 0): img_l,                                     # 左
+        (5, 0): pg.transform.flip(img_l, True, False),      # 右 ← 左を反転
+
+        (-5, -5): img_lu,                                   # 左上
+        (5, -5): pg.transform.flip(img_lu, True, False),    # 右上
+
+        (-5, 5): img_ld,                                    # 左下
+        (5, 5): pg.transform.flip(img_ld, True, False),     # 右下
+
+        (0, -5): img_u,                                     # 上
+        (0, 5): img_d,                                      # 下
 
         (0, 0): img_u,
     }
